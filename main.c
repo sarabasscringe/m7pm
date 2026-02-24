@@ -7,19 +7,20 @@ int MAX_ARGS = 8;
 
 /* expect this to be buggy, do mind it splits by spaces except quoted spaces
    escaped quotes do not function like a quote in the parser, but as a character */
-char parse(char *pnt_cmd, int cmd_len) {
+char (*parse(char *pnt_cmd, int cmd_len))[MAX_CHARS][MAX_ARGS] {
     // boring memory allocation and setup
     int quoted = 0;
     int escaped = 0;
     char (*buffer)[MAX_ARGS] = malloc(sizeof(char[MAX_CHARS][MAX_ARGS]));
     int alloc_size = sizeof(char[MAX_CHARS]); // o(n^2)
     char *buffer_string = malloc(alloc_size);
-    int i = 0; // i use 2 indexes, i represents index of command, buffer_i represents character in the buffer
+    int depth = 0; // length of array so far
+    int i = 0; // i use 2 indexes, i represents index of command, buffer_i represents character in the string buffer
     int buffer_i = 0;
     // fun logic stuff
     while (i < cmd_len) {
         if (pnt_cmd[i] == ' ') {
-            
+            strncpy(buffer[depth], buffer_string, MAX_CHARS-1);
             memset(buffer_string, 0, alloc_size);
         }
         if (pnt_cmd[i] == '\\') {
@@ -27,7 +28,7 @@ char parse(char *pnt_cmd, int cmd_len) {
             continue;
         }
         if (!(escaped || quoted || pnt_cmd[i] == '\n' || pnt_cmd[i] == '\\')) {
-            buffer[i] = pnt_cmd[i];
+            buffer_string[i] = pnt_cmd[i]; // append to string
         }
         if (escaped) {
             escaped = 0;
