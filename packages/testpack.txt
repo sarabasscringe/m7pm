@@ -1,0 +1,1 @@
+If this has been copied to root folder, it works!
