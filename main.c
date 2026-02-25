@@ -46,7 +46,7 @@ char (*parse(char *pnt_cmd, int cmd_len, int *depth))[MAX_CHARS][MAX_ARGS] {
             escaped = 1;
             continue;
         }
-        if (!(escaped || quoted || pnt_cmd[i] == '\n' || pnt_cmd[i] == '\\' || pnt_cmd[i] == ' ')) {
+        if (!(escaped && quoted || pnt_cmd[i] == '\n' || pnt_cmd[i] == '\\' || pnt_cmd[i] == ' ')) {
             buffer_string[buffer_i] = pnt_cmd[i]; // append to string
             buffer_i++;
         }
@@ -89,7 +89,12 @@ int main() {
         // commands
         if (strcmp((*splt_cmd)[0], "lping") == 0) {
             printf("local pong - swish!\n");
-        } else {
+        } else 
+        if (strcmp((*splt_cmd)[0], "lping") == 0) {
+            
+        }
+        // 404
+        else {
             printf("command not found\n");
         }
         free(splt_cmd);
