@@ -1,0 +1,5 @@
+this is the help textfile for m7pm
+heads up; if your command uses more than 8 args (spaces without quotes) C will have undefined behaviour
+heres a list of valid commands and usage:
+- lping         | basic local ping, prints back a pong
+- help          | print a list of commands

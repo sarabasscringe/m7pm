@@ -19,7 +19,7 @@ char (*parse(char *pnt_cmd, int cmd_len, int *depth))[MAX_CHARS][MAX_ARGS] {
     int buffer_i = 0;
     // fun logic stuff
     while (i < cmd_len) {
-        if (pnt_cmd[i] == ' ' && !buffer_string[0] == '\0') {
+        if (pnt_cmd[i] == ' ' && !(buffer_string[0] == '\0' || escaped || quoted)) {
             buffer_string[buffer_i] = '\0';
             strncpy((*buffer)[*depth], buffer_string, MAX_CHARS-1);
             (*buffer)[*depth][MAX_CHARS-1] = '\0';
@@ -39,6 +39,7 @@ char (*parse(char *pnt_cmd, int cmd_len, int *depth))[MAX_CHARS][MAX_ARGS] {
                 } else {
                     quoted = 1;
                 }
+                i++;
                 continue;
             }
         }
@@ -46,7 +47,7 @@ char (*parse(char *pnt_cmd, int cmd_len, int *depth))[MAX_CHARS][MAX_ARGS] {
             escaped = 1;
             continue;
         }
-        if (!(escaped && quoted || pnt_cmd[i] == '\n' || pnt_cmd[i] == '\\' || pnt_cmd[i] == ' ')) {
+        if (!(escaped || pnt_cmd[i] == '\n' || pnt_cmd[i] == '\\' || (pnt_cmd[i] == ' ' && !quoted))) {
             buffer_string[buffer_i] = pnt_cmd[i]; // append to string
             buffer_i++;
         }
@@ -63,6 +64,17 @@ char (*parse(char *pnt_cmd, int cmd_len, int *depth))[MAX_CHARS][MAX_ARGS] {
         (*depth)++;
     }
     free(buffer_string);
+    return buffer;
+}
+
+char *getfile(char *filename, long int filesz) {
+    FILE *fptr = fopen(filename,"rb");
+    fseek(fptr,0,SEEK_END);
+    filesz = ftell(fptr);
+    rewind(fptr);
+    char *buffer = malloc(filesz + 1);
+    size_t read = fread(buffer, 1, filesz, fptr); // i honestly have no idea what this does i just found it on stackoverflow
+    buffer[read] = '\0'; // to my credit i understand this line to an extent
     return buffer;
 }
 
@@ -90,8 +102,10 @@ int main() {
         if (strcmp((*splt_cmd)[0], "lping") == 0) {
             printf("local pong - swish!\n");
         } else 
-        if (strcmp((*splt_cmd)[0], "lping") == 0) {
-            
+        if (strcmp((*splt_cmd)[0], "help") == 0) {
+            long int fsz;
+            char *fptr = getfile("resources/help.txt", *(&fsz)); // remember to free fptr, its a pointer to the file as a string
+            printf("%s\n",fptr);
         }
         // 404
         else {
