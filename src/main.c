@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #define MAX_ARGS 8
-#define MAX_CHARS 16
+#define MAX_CHARS 64
 
 /* expect this to be buggy, do mind it splits by spaces except quoted spaces
    escaped quotes do not function like a quote in the parser, but as a character */
@@ -79,7 +80,7 @@ char *getfile(char *filename, long int filesz) {
 }
 
 int main() {
-    printf("MIN7 PACKAGE MANAGER SHELL\n");
+    printf("MIN7 PACKAGE MANAGER SHELL\nuse command `help` for a list of commands\n");
 
     while (true) { // main loop
         // get commands
@@ -87,17 +88,17 @@ int main() {
         char cmd[64];
         fgets(cmd,64,stdin);
         cmd[strcspn(cmd, "\n")] = '\0';
-        printf("command: %s\n",cmd);
+        // printf("command: %s\n",cmd);
         int cmd_len = strlen(cmd);
         char (*splt_cmd)[MAX_CHARS][MAX_ARGS];
         int spltcmdl;
         splt_cmd = parse(cmd, cmd_len, &spltcmdl); // spltcmdl is the length of the splt_cmd array
-        printf("cmd args amt: %d\n", spltcmdl); // debugging purpose only
+        /* printf("cmd args amt: %d\n", spltcmdl); // debugging purpose only
         for (int i = 0;i < spltcmdl;i++) {
             printf("cmd part %d",i);
             printf(" = |%s|\n",(*splt_cmd)[i]);
         }
-        printf("\n");
+        printf("\n"); */
         // commands
         if (strcmp((*splt_cmd)[0], "lping") == 0) {
             printf("local pong - swish!\n");
@@ -105,11 +106,36 @@ int main() {
         if (strcmp((*splt_cmd)[0], "help") == 0) {
             long int fsz;
             char *fptr = getfile("resources/help.txt", *(&fsz)); // remember to free fptr, its a pointer to the file as a string
-            printf("%s\n",fptr);
+            printf("%s\n\n",fptr);
+        } else
+        if (strcmp((*splt_cmd)[0], "cd") == 0) {
+            if (chdir((*splt_cmd)[1]) != 0) {
+                printf("error in::%s;\ndirectory might not exist, or there was an unspecified error\n", cmd);
+                printf("take contact at saraespedal8@gmail.com / sarabasscringe (discord)\nor open an issue on github.com/sarabasscringe/m7pm\n");
+            } else {
+                printf("changed directory to %s\n", (*splt_cmd)[1]);
+            }
+        } else
+        if (strcmp((*splt_cmd)[0], "pwd") == 0) {
+            char buffer[1024];
+            getcwd(buffer, sizeof(buffer));
+            printf("current working directory: %s\n", buffer);
+        } else
+        if (strcmp((*splt_cmd)[0], "ls") == 0) {
+            if (strcmp((*splt_cmd)[1], "w") == 0) {
+                printf("using ls in powershell\n");
+                system("dir");
+            } else
+            if (strcmp((*splt_cmd)[1], "lx") == 0) {
+                printf("using ls in shell\n");
+                system("ls");
+            } else {
+                printf("inbuilt list files function isnt finished yet sob\n");
+            }
         }
         // 404
         else {
-            printf("command not found\n");
+            printf("404 command not found\n");
         }
         free(splt_cmd);
     }

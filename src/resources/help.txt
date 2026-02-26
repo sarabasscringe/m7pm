@@ -1,0 +1,8 @@
+this is the help textfile for m7pm
+heads up; each line can only take 8 args of 64 chars each because C is a strict dommy mommy
+heres a list of valid commands and usage:
+- lping         | basic local ping, prints back a pong
+- help          | print a list of commands
+- pwd           | print current working directory
+- cd            | <target_dir> change wd
+- ls            | <w/lx> windows / linux. leave argument empty for the slower custom ls function
