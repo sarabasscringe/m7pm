@@ -1,7 +1,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
+#include <dirent.h>
 
 #define MAX_ARGS 16
 #define MAX_CHARS 64
@@ -77,22 +80,6 @@ char (*parse(char *pnt_cmd, int cmd_len, int *depth))[MAX_CHARS][MAX_ARGS] {
     return buffer;
 }
 
-int r_error(int type, char *error) { // error system
-    if (type == 1) {
-        printf(col_red"[err1]"col_reset " > %s", error);
-    } else {
-        printf("undetermined error\nerr type: %d\nerr message: %s");
-    }
-    printf("\n");
-    return 0;
-}
-
-int printls() {
-    char parent_dir[1024];
-    getcwd(parent_dir, sizeof(char [1024]));
-    return 0;
-}
-
 char *getfile(char *filename, long int *filesz) { // remember to free the pointer to buffer
     FILE *fptr = fopen(filename,"rb");
     fseek(fptr,0,SEEK_END);
@@ -102,6 +89,69 @@ char *getfile(char *filename, long int *filesz) { // remember to free the pointe
     size_t read = fread(buffer, 1, *filesz, fptr); // i honestly have no idea what size_t does i just found it on stackoverflow
     buffer[read] = '\0'; // to my credit i understand this line to an extent
     return buffer;
+}
+
+int r_error(int type, char *error) { // error system
+    long int fsz;
+    char *fptr = getfile("resources/config.txt", &fsz);
+    char (*config)[MAX_CHARS][MAX_ARGS];
+    int configlen;
+    config = parse(fptr, fsz, &configlen);
+    free(fptr);
+    if (type == 1) {
+        printf(col_grn"[err1]"col_reset " > %s", error);
+    } else if (type == 2) {
+        printf(col_ylw"[err2]"col_reset " > %s", error);
+    } else if (type == 3) {
+        printf(col_red"[err3]"col_reset " > %s", error);
+    } else if (type == 4) {
+        printf(col_blu"[err4]"col_reset " > %s", error);
+    } else if (type == 5) {
+        printf(col_mag"[err5]"col_reset " > %s", error);
+    } else {
+        printf("undetermined error\nerr type: %d\nerr message: %s");
+    }
+    if (type != 5 && strcmp((*config)[2],"y") == 0) {
+        printf("\ntake contact at saraespedal8@gmail.com / sarabasscringe (discord)\nor open an issue on github.com/sarabasscringe/m7pm if you believe this was a mistake in the program");
+    }
+    printf("\n");
+    free(config);
+    return 0;
+}
+
+int printls(char *parent_dir) {
+    DIR *dir = opendir(parent_dir);
+    struct dirent *dp;
+    if (!dir) {
+        char buffer[128];
+        snprintf(buffer, sizeof(char [128]), "directory `%s` has an issue when opening", parent_dir);
+        r_error(5, buffer);
+        return 1;
+    }
+    int count = 0;
+    while ((dp = readdir(dir)) != NULL) {
+        if (strcmp(dp->d_name, ".") == 0 || strcmp(dp->d_name, "..") == 0) {continue;}
+        count++;
+        char path[1024];
+        snprintf(path, sizeof(path), "%s/%s", parent_dir, dp->d_name);
+        struct stat st;
+        stat(path, &st);
+        if (stat(dp->d_name, &st) == 0) {
+            if (S_ISDIR(st.st_mode)) {
+                printf(col_cyn" [dir]:: %s\n"col_reset, dp->d_name);
+            } else {
+                printf(col_grn"[file]:: %s\n"col_reset, dp->d_name);
+            }
+        }
+    }
+    if (count == 0) {
+        char buffer[128];
+        snprintf(buffer, sizeof(char [128]), "directory `%s` is empty, no error", parent_dir);
+        r_error(5, buffer);
+        return 1;
+    }
+    closedir(dir);
+    return 0;
 }
 
 int main() {
@@ -135,26 +185,59 @@ int main() {
         }
         printf("\n"); */
         // commands
+        
         if (strcmp((*splt_cmd)[0], "lping") == 0) {
             printf("local pong - swish!\n");
         } else 
+
         if (strcmp((*splt_cmd)[0], "help") == 0) {
-            long int fsz;
-            char *fptr = getfile("resources/help.txt", &fsz); // remember to free fptr, its a pointer to the file as a string
-            printf("%s",fptr);
-            free(fptr);
-        } else
-        if (strcmp((*splt_cmd)[0], "cd") == 0) {
-            if (chdir((*splt_cmd)[1]) != 0) {
-                printf("error in::%s;\ndirectory might not exist, or there was an unspecified error\n", cmd);
-                printf("take contact at saraespedal8@gmail.com / sarabasscringe (discord)\nor open an issue on github.com/sarabasscringe/m7pm\n");
+            if (strcmp((*splt_cmd)[1], "config") == 0) {
+                long int fsz;
+                char *fptr = getfile("resources/config_help.md", &fsz); // remember to free fptr, its a pointer to the file as a string
+                printf(col_ylw"%s\n"col_reset,fptr);
+                free(fptr);
+            } else if (strcmp((*splt_cmd)[1], "error") == 0) {
+                long int fsz;
+                char *fptr = getfile("resources/error_help.md", &fsz); // remember to free fptr, its a pointer to the file as a string
+                printf(col_red"%s\n"col_reset,fptr);
+                free(fptr);
             } else {
-                printf("changed directory to %s\n", (*splt_cmd)[1]);
+                long int fsz;
+                char *fptr = getfile("resources/help.txt", &fsz); // remember to free fptr, its a pointer to the file as a string
+                printf(col_blu"%s\n"col_reset,fptr);
+                free(fptr);
             }
         } else
-        if (strcmp((*splt_cmd)[0], "pwd") == 0) {
-            printf("current working directory: %s\n", wd);
+
+        if (strcmp((*splt_cmd)[0], "cd") == 0) {
+            if (chdir((*splt_cmd)[1]) != 0) {
+                char *str_const = "directory `%s` does not exist or there was an unknown error";
+                char buffer[cmd_sz + sizeof(str_const)];
+                snprintf(buffer, cmd_sz, str_const, (*splt_cmd)[1]);
+                r_error(1,buffer);
+            } else {
+                printf("changed directory to `%s`\n", (*splt_cmd)[1]);
+            }
         } else
+
+        if (strcmp((*splt_cmd)[0], "pwd") == 0) {
+            printf("current working directory: `%s`\n", wd);
+        } else
+
+        if (strcmp((*splt_cmd)[0], "pconfig") == 0) {
+            if (strcmp((*config)[1], "y") == 0) {
+                r_error(1,"you dont have to push configs silly");
+            } else {
+                printf("pushing config from config.txt..");
+                long int fsz;
+                char *fptr = getfile("resources/config.txt", &fsz);
+                char (*config)[MAX_CHARS][MAX_ARGS];
+                int configlen;
+                config = parse(fptr, fsz, &configlen);
+                free(fptr);
+            }
+        } else
+
         if (strcmp((*splt_cmd)[0], "ls") == 0) {
             if (strcmp((*splt_cmd)[1], "os") == 0) {
                 if (strcmp((*config)[0], "w") == 0) {
@@ -165,24 +248,26 @@ int main() {
                     printf("using ls in shell\n");
                     system("ls");
                 } else {
-                    r_error('1',"error in the config file, or invalid operating system in resources/config.txt");
+                    r_error(2,"error trying to get operating system");
                 }
-            
             } else {
-                if (printls() != 0) {
-
+                if (printls(wd) != 0) {
+                    r_error(4, "error in ls function (printls())");
                 }
             }
-        }
+        } else
         // 404
-        else {
-            char buffer[cmd_sz];
-            snprintf(buffer, cmd_sz, "command <%s> is not valid", cmd);
+        {
+            char *str_const = "command `%s` is not valid";
+            int sz = cmd_sz + sizeof(str_const);
+            char buffer[sz];
+            snprintf(buffer, sz, str_const, cmd);
             r_error(1,buffer);
         }
+        // finish up
         free(splt_cmd);
-        free(config);
         if ((*config)[1] == "y") {
+            free(config);
             long int fsz;
             char *fptr = getfile("resources/config.txt", &fsz);
             char (*config)[MAX_CHARS][MAX_ARGS];

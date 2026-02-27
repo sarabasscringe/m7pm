@@ -6,3 +6,4 @@ to my defense, it isnt supposed to be read at all
 ## heres a neat list of what the args does:
 1. your operating system (w / lx)
 2. wether config should update between every command (y / n)
+2. wether there should display links to my socials to report bugs for errors (y / n)
